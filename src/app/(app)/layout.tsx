@@ -1,19 +1,21 @@
-import type { Metadata } from "next";
-import { Outfit } from "next/font/google";
-import { WalletProvider } from "@/context/WalletContext";
-import { ThemeProvider } from "@/context/ThemeContext";
-import { AdminProvider } from "@/context/AdminContext";
-import "./globals.css";
+import type { Metadata } from "next"
+import { Outfit } from "next/font/google"
+import { NextIntlClientProvider } from "next-intl"
+import { WalletProvider } from "@/context/WalletContext"
+import { ThemeProvider } from "@/context/ThemeContext"
+import { AdminProvider } from "@/context/AdminContext"
+import messages from "../../../messages/en.json"
+import "../globals.css"
 
 const outfit = Outfit({
   variable: "--font-outfit",
   subsets: ["latin"],
-});
+})
 
 export const metadata: Metadata = {
   title: "Stellar Raise Interface",
   description: "The Gateway for Users to browse active campaigns and contribute to projects.",
-};
+}
 
 /**
  * Inline script executed before first paint to prevent flash of wrong theme.
@@ -32,13 +34,20 @@ const themeScript = `
     document.documentElement.classList.remove('dark');
   }
 })();
-`.trim();
+`.trim()
 
+// This is the root layout for the (app) route group: the admin console and
+// creator dashboard (admin/*, dashboard/*), which are excluded from
+// next-intl's middleware and stay English-only. It's a sibling root to
+// src/app/[locale]/layout.tsx, not an ancestor of it — route groups let both
+// define their own <html>/<body> without nesting one inside the other.
+// It still wraps children in NextIntlClientProvider (English messages) so
+// shared components like Navbar that call useTranslations() work here too.
 export default function RootLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+}: {
+  children: React.ReactNode
+}) {
   return (
     // No className here — the FOUC script sets/clears "dark" before paint
     <html lang="en" suppressHydrationWarning>
@@ -47,14 +56,14 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
       <body className={`${outfit.variable} antialiased font-sans`}>
-        <ThemeProvider>
-          <WalletProvider>
-            <AdminProvider>
-              {children}
-            </AdminProvider>
-          </WalletProvider>
-        </ThemeProvider>
+        <NextIntlClientProvider locale="en" messages={messages}>
+          <ThemeProvider>
+            <WalletProvider>
+              <AdminProvider>{children}</AdminProvider>
+            </WalletProvider>
+          </ThemeProvider>
+        </NextIntlClientProvider>
       </body>
     </html>
-  );
+  )
 }
